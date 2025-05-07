@@ -13,6 +13,7 @@
 ALBERT_LOGGING_CATEGORY("snippets")
 using namespace albert;
 using namespace std;
+using namespace util;
 
 static const int preview_max_size = 100;
 

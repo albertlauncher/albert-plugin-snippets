@@ -10,7 +10,7 @@
 class QWidget;
 
 class Plugin : public albert::ExtensionPlugin,
-               public albert::IndexQueryHandler,
+               public albert::util::IndexQueryHandler,
                public snippets::Plugin
 
 {
@@ -29,5 +29,5 @@ private:
     void handleTriggerQuery(albert::Query &) override;
 
     QFileSystemWatcher fs_watcher;
-    albert::BackgroundExecutor<std::vector<albert::IndexItem>> indexer;
+    albert::util::BackgroundExecutor<std::vector<albert::util::IndexItem>> indexer;
 };
