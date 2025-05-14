@@ -1,21 +1,24 @@
-// Copyright (c) 2023-2024 Manuel Schneider
+// Copyright (c) 2023-2025 Manuel Schneider
 
 #include "plugin.h"
+#include "filenamedialog.h"
 #include "ui_configwidget.h"
 #include <QFile>
 #include <QFileSystemModel>
-#include <QInputDialog>
 #include <QMessageBox>
 #include <QTextStream>
 #include <albert/albert.h>
+#include <albert/widgetsutil.h>
 #include <albert/standarditem.h>
+#include <QTimer>
 #include <memory>
 ALBERT_LOGGING_CATEGORY("snippets")
+using namespace albert::util;
 using namespace albert;
 using namespace std;
-using namespace util;
 
-static const int preview_max_size = 100;
+static const auto preview_max_size = 100;
+static const auto prefix_add = QString("+");
 
 struct SnippetItem : Item
 {
@@ -34,33 +37,25 @@ struct SnippetItem : Item
             WARN << "Failed to read from snippet file" << path();
     }
 
-    QString id() const override
-    { return file_base_name_; }
+    QString id() const override { return file_base_name_; }
 
-    QString text() const override
-    { return file_base_name_; }
+    QString text() const override { return file_base_name_; }
 
     QString subtext() const override
     {
-        static const auto tr = QCoreApplication::translate("SnippetItem", "Text snippet");
+        static const auto tr = Plugin::tr("Text snippet");
         return QString("%1 – %2").arg(tr, preview_);
     }
 
-    QStringList iconUrls() const override
-    { return {":snippet"}; }
+    QStringList iconUrls() const override { return {":snippet"}; }
 
     vector<Action> actions() const override
     {
-        static const auto tr_cp = QCoreApplication::translate("SnippetItem", "Copy and paste");
-        static const auto tr_c = QCoreApplication::translate("SnippetItem", "Copy");
-        static const auto tr_e = QCoreApplication::translate("SnippetItem", "Edit");
-        static const auto tr_r = QCoreApplication::translate("SnippetItem", "Remove");
-
         vector<Action> actions;
 
         if (havePasteSupport())
             actions.emplace_back(
-                "cp", tr_cp,
+                "cp", Plugin::tr("Copy and paste"),
                 [this]{
                     QFile f(path());
                     f.open(QIODevice::ReadOnly);
@@ -69,7 +64,7 @@ struct SnippetItem : Item
             );
 
         actions.emplace_back(
-            "c", tr_c,
+            "c", Plugin::tr("Copy"),
             [this]{
                 QFile f(path());
                 f.open(QIODevice::ReadOnly);
@@ -77,9 +72,10 @@ struct SnippetItem : Item
             }
         );
 
-        actions.emplace_back("o", tr_e, [this]{ open(path()); });
+        actions.emplace_back("o", Plugin::tr("Edit"), [this]{ open(path()); });
 
-        actions.emplace_back("r", tr_r, [this]{ plugin_->removeSnippet(file_base_name_+".txt"); });
+        actions.emplace_back("r", Plugin::tr("Remove"),
+                             [this]{ plugin_->removeSnippet(file_base_name_+".txt"); });
 
         return actions;
     }
@@ -118,30 +114,34 @@ Plugin::Plugin()
     };
 }
 
-QString Plugin::defaultTrigger() const
-{ return "snip "; }
+QString Plugin::defaultTrigger() const { return "snip "; }
 
-QString Plugin::synopsis(const QString &) const
+QString Plugin::synopsis(const QString &q) const
 {
     static const auto tr_s = tr("<filter>|+");
-    return tr_s;
+    static const auto tr_sa = tr("[snippet text]");
+
+    if (q.startsWith(prefix_add))
+        return tr_sa;
+    else
+        return tr_s;
 }
 
-void Plugin::updateIndexItems()
-{ indexer.run(); }
+void Plugin::updateIndexItems() { indexer.run(); }
 
 void Plugin::handleTriggerQuery(Query &query)
 {
-    if (query.string() == QStringLiteral("+"))
+    if (query.string().startsWith(prefix_add))
         query.add(
             StandardItem::make(
-                "+",
+                prefix_add,
                 tr("Create new snippet"),
                 tr("Create snippet file and open it in default editor."),
                 {":snippet"},
-                {
-                    {"add", tr("Create"), [this](){ addSnippet(); }}
-                }
+                {{
+                    "add", tr("Create"),
+                    [this, q=query.string().mid(prefix_add.size())]{ addSnippet(q); }
+                }}
             )
         );
     else
@@ -150,47 +150,54 @@ void Plugin::handleTriggerQuery(Query &query)
 
 void Plugin::addSnippet(const QString &text, QWidget *parent) const
 {
-    QString name;
-    while (true)
+    if (!parent)
     {
-        bool ok;
-        name = QInputDialog::getText(parent, qApp->applicationDisplayName(),
-                                     tr("Snippet name:"),
-                                     QLineEdit::Normal, {}, &ok);
-
-        if (!ok)
-            break;
-
-        if (name.isEmpty())
-        {
-            QMessageBox::warning(parent, qApp->applicationDisplayName(),
-                                 tr("The snippet name must not be empty."));
-            continue;
-        }
-
-        QFile file(QDir(configLocation()).filePath(name) + ".txt");
-        if (file.exists())
-        {
-            QMessageBox::warning(parent, qApp->applicationDisplayName(),
-                                 tr("There is already a snippet called '%1'.").arg(name));
-            continue;
-        }
-
-        if(file.open(QIODevice::WriteOnly))
-        {
-            if (text.isEmpty())
-                open(file.fileName());
-            else
-                QTextStream(&file) << text;
-            file.close();
-        }
-        else
-            QMessageBox::critical(parent, qApp->applicationDisplayName(),
-                                  tr("Failed creating the snippet file '%1'.")
-                                      .arg(file.fileName()));
-
-        break;
+        showSettings(id()); // sets config_widget
+        parent = config_widget;
     }
+
+    auto dialog = new FilenameDialog(QDir(configLocation()), parent);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->open();
+
+    connect(dialog, &QDialog::finished, this, [text, dialog](int result){
+        if (result == QDialog::Accepted)
+        {
+            if (QFile file(dialog->filePath());
+                file.open(QIODevice::WriteOnly))
+            {
+                if (text.isEmpty())
+                    open(file.fileName());
+                else
+                    QTextStream(&file) << text;
+                file.close();
+            }
+            else
+                critical(tr("Failed creating the snippet file '%1'.").arg(file.fileName()));
+        }
+        dialog->deleteLater();
+    });
+
+    // The following old code is extremely fragile due to the non activating nature of the app
+    // for now simply showing the settings makes sure the app has key
+
+    // if (parent)
+    // {
+    //     // dialog->setWindowModality(Qt::WindowModal);
+    //
+    // }
+    // else
+    // {
+    //     // dialog->setWindowModality(Qt::ApplicationModal);
+    //     // dialog->setModal(true);
+    //     dialog->show();
+    //     dialog->raise();
+    //     dialog->activateWindow();
+    // }
+
+    // CRIT << dialog->windowModality();
+    // connect(dialog, &QWidget::destroyed, this, [](){ CRIT << "destroyed";});
+
 }
 
 void Plugin::removeSnippet(const QString &file_name) const
@@ -198,11 +205,9 @@ void Plugin::removeSnippet(const QString &file_name) const
     auto path = QDir(configLocation()).filePath(file_name);
     if (!QFile::exists(path))
         WARN << "Path to remove does not exist:" << path;
-    else if (QMessageBox::question(nullptr, qApp->applicationName(),
-                                   tr("Move snippet '%1' to trash?").arg(file_name)) == QMessageBox::Yes)
+    else if (question(tr("Move snippet '%1' to trash?").arg(file_name)) == QMessageBox::Yes)
         if (!QFile::moveToTrash(path))
-            QMessageBox::warning(nullptr, qApp->applicationName(),
-                                 tr("Failed to move snippet file to trash."));
+            warning(tr("Failed to move snippet file to trash."));
 }
 
 class RedIfNotTxtFileSystemModel : public QFileSystemModel
@@ -220,9 +225,9 @@ public:
 
 QWidget *Plugin::buildConfigWidget()
 {
-    auto *w = new QWidget;
+    config_widget = new QWidget;
     Ui::ConfigWidget ui;
-    ui.setupUi(w);
+    ui.setupUi(config_widget);
 
     auto *model = new RedIfNotTxtFileSystemModel(ui.listView);
     model->setFilter(QDir::Files);
@@ -239,7 +244,7 @@ QWidget *Plugin::buildConfigWidget()
             [this](){ open(configLocation()); });
 
     connect(ui.pushButton_add, &QPushButton::clicked,
-            this, [this, w=w](){ addSnippet({}, w); });
+            this, [this](){ addSnippet({}, config_widget); });
 
     connect(ui.pushButton_remove, &QPushButton::clicked, this,
             [this, model, lw=ui.listView](){
@@ -247,5 +252,5 @@ QWidget *Plugin::buildConfigWidget()
             removeSnippet(model->filePath(lw->currentIndex()));
     });
 
-    return w;
+    return config_widget;
 }

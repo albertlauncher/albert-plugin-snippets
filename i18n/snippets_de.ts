@@ -21,23 +21,7 @@
     </message>
 </context>
 <context>
-    <name>Plugin</name>
-    <message>
-        <source>&lt;filter&gt;|+</source>
-        <translation>&lt;Filter&gt;|+</translation>
-    </message>
-    <message>
-        <source>Create new snippet</source>
-        <translation>Neues Schnipsel erstellen</translation>
-    </message>
-    <message>
-        <source>Create snippet file and open it in default editor.</source>
-        <translation>Neue Schnipseldatei erstellen und in Standardeditor öffnen.</translation>
-    </message>
-    <message>
-        <source>Create</source>
-        <translation>Erstellen</translation>
-    </message>
+    <name>FilenameDialog</name>
     <message>
         <source>Snippet name:</source>
         <translation>Schnipselname:</translation>
@@ -48,7 +32,26 @@
     </message>
     <message>
         <source>There is already a snippet called &apos;%1&apos;.</source>
-        <translation>Es gibt bereits ein Schnipsel mit dem Namen &apos;%1&apos;.</translation>
+        <translation>Es gibt bereits einen Schnipsel mit dem Namen &apos;%1&apos;.</translation>
+    </message>
+</context>
+<context>
+    <name>Plugin</name>
+    <message>
+        <source>&lt;filter&gt;|+</source>
+        <translation>&lt;Filter&gt;|+</translation>
+    </message>
+    <message>
+        <source>Create new snippet</source>
+        <translation>Neuen Schnipsel erstellen</translation>
+    </message>
+    <message>
+        <source>Create snippet file and open it in default editor.</source>
+        <translation>Neue Schnipseldatei erstellen und in Standardeditor öffnen.</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Erstellen</translation>
     </message>
     <message>
         <source>Failed creating the snippet file &apos;%1&apos;.</source>
@@ -56,15 +59,12 @@
     </message>
     <message>
         <source>Move snippet &apos;%1&apos; to trash?</source>
-        <translation>Snippet &apos;%1&apos; in den Papierkorb verschieben?</translation>
+        <translation>Schnipsel &apos;%1&apos; in den Papierkorb verschieben?</translation>
     </message>
     <message>
         <source>Failed to move snippet file to trash.</source>
         <translation>Schnipseldatei konnte nicht in den Papierkorb verschoben werden.</translation>
     </message>
-</context>
-<context>
-    <name>SnippetItem</name>
     <message>
         <source>Text snippet</source>
         <translation>Textschnipsel</translation>
@@ -84,6 +84,10 @@
     <message>
         <source>Remove</source>
         <translation>Entfernen</translation>
+    </message>
+    <message>
+        <source>[snippet text]</source>
+        <translation>[Schnipseltext]</translation>
     </message>
 </context>
 </TS>

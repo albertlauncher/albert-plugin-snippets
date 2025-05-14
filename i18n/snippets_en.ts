@@ -21,6 +21,21 @@
     </message>
 </context>
 <context>
+    <name>FilenameDialog</name>
+    <message>
+        <source>Snippet name:</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>The snippet name must not be empty.</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>There is already a snippet called &apos;%1&apos;.</source>
+        <translation></translation>
+    </message>
+</context>
+<context>
     <name>Plugin</name>
     <message>
         <source>&lt;filter&gt;|+</source>
@@ -39,18 +54,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Snippet name:</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>The snippet name must not be empty.</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>There is already a snippet called &apos;%1&apos;.</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Failed creating the snippet file &apos;%1&apos;.</source>
         <translation></translation>
     </message>
@@ -62,9 +65,6 @@
         <source>Failed to move snippet file to trash.</source>
         <translation></translation>
     </message>
-</context>
-<context>
-    <name>SnippetItem</name>
     <message>
         <source>Text snippet</source>
         <translation></translation>
@@ -83,6 +83,10 @@
     </message>
     <message>
         <source>Remove</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>[snippet text]</source>
         <translation></translation>
     </message>
 </context>
