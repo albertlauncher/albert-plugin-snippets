@@ -34,7 +34,7 @@ FilenameDialog::FilenameDialog(QDir loc, QWidget *parent) :
 
 QString FilenameDialog::name() { return line_edit->text(); }
 
-QString FilenameDialog::filePath() { return snippets_dir.filePath(name()) + ".txt"; }
+QString FilenameDialog::filePath(){ return snippets_dir.filePath(name()) + QStringLiteral(".txt"); }
 
 void FilenameDialog::updateUI(const QString &text)
 {
@@ -44,7 +44,7 @@ void FilenameDialog::updateUI(const QString &text)
         info_label->show();
         buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
     }
-    else if (QFile::exists(snippets_dir.filePath(text) + ".txt"))
+    else if (QFile::exists(snippets_dir.filePath(text) + QStringLiteral(".txt")))
     {
         info_label->setText(tr("There is already a snippet called '%1'.").arg(text));
         info_label->show();

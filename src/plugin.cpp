@@ -1,24 +1,24 @@
 // Copyright (c) 2023-2025 Manuel Schneider
 
-#include "plugin.h"
 #include "filenamedialog.h"
+#include "plugin.h"
 #include "ui_configwidget.h"
 #include <QFile>
 #include <QFileSystemModel>
 #include <QMessageBox>
 #include <QTextStream>
-#include <albert/albert.h>
-#include <albert/widgetsutil.h>
-#include <albert/standarditem.h>
 #include <QTimer>
-#include <memory>
+#include <albert/albert.h>
+#include <albert/messagebox.h>
+#include <albert/standarditem.h>
 ALBERT_LOGGING_CATEGORY("snippets")
+using namespace Qt::StringLiterals;
 using namespace albert::util;
 using namespace albert;
 using namespace std;
 
 static const auto preview_max_size = 100;
-static const auto prefix_add = QString("+");
+static const auto prefix_add = u"+"_s;
 
 struct SnippetItem : Item
 {
@@ -30,7 +30,7 @@ struct SnippetItem : Item
             QTextStream in(&file);
             preview_ = in.readAll().simplified();
             if (preview_.size() > preview_max_size)
-                preview_ = preview_.left(preview_max_size) + " …";
+                preview_ = preview_.left(preview_max_size) + u" …"_s;
             preview_.squeeze();
             file.close();
         } else
@@ -44,10 +44,10 @@ struct SnippetItem : Item
     QString subtext() const override
     {
         static const auto tr = Plugin::tr("Text snippet");
-        return QString("%1 – %2").arg(tr, preview_);
+        return u"%1 – %2"_s.arg(tr, preview_);
     }
 
-    QStringList iconUrls() const override { return {":snippet"}; }
+    QStringList iconUrls() const override { return {u":snippet"_s}; }
 
     vector<Action> actions() const override
     {
@@ -55,7 +55,7 @@ struct SnippetItem : Item
 
         if (havePasteSupport())
             actions.emplace_back(
-                "cp", Plugin::tr("Copy and paste"),
+                u"cp"_s, Plugin::tr("Copy and paste"),
                 [this]{
                     QFile f(path());
                     f.open(QIODevice::ReadOnly);
@@ -64,7 +64,7 @@ struct SnippetItem : Item
             );
 
         actions.emplace_back(
-            "c", Plugin::tr("Copy"),
+            u"c"_s, Plugin::tr("Copy"),
             [this]{
                 QFile f(path());
                 f.open(QIODevice::ReadOnly);
@@ -72,16 +72,16 @@ struct SnippetItem : Item
             }
         );
 
-        actions.emplace_back("o", Plugin::tr("Edit"), [this]{ open(path()); });
+        actions.emplace_back(u"o"_s, Plugin::tr("Edit"), [this]{ open(path()); });
 
-        actions.emplace_back("r", Plugin::tr("Remove"),
-                             [this]{ plugin_->removeSnippet(file_base_name_+".txt"); });
+        actions.emplace_back(u"r"_s, Plugin::tr("Remove"),
+                             [this]{ plugin_->removeSnippet(file_base_name_ + u".txt"_s); });
 
         return actions;
     }
 
     QString path() const
-    { return QDir(plugin_->configLocation()).filePath(file_base_name_ + ".txt"); }
+    { return QDir(plugin_->configLocation()).filePath(file_base_name_ + u".txt"_s); }
 
 private:
 
@@ -97,13 +97,13 @@ Plugin::Plugin()
 
     tryCreateDirectory(conf_path);
 
-    fs_watcher.addPath(conf_path.c_str());
+    fs_watcher.addPath(QString::fromLocal8Bit(conf_path.c_str()));
     connect(&fs_watcher, &QFileSystemWatcher::directoryChanged,
             this, [this]{ updateIndexItems(); });
 
     indexer.parallel = [this](const bool &abort){
         vector<IndexItem> r;
-        for (const auto &f : QDir(configLocation()).entryInfoList({"*.txt"}, QDir::Files)){
+        for (const auto &f : QDir(configLocation()).entryInfoList({u"*.txt"_s}, QDir::Files)){
             if (abort) return r;
             r.emplace_back(make_shared<SnippetItem>(f, this), f.completeBaseName());
         }
@@ -114,7 +114,7 @@ Plugin::Plugin()
     };
 }
 
-QString Plugin::defaultTrigger() const { return "snip "; }
+QString Plugin::defaultTrigger() const { return u"snip "_s; }
 
 QString Plugin::synopsis(const QString &q) const
 {
@@ -137,9 +137,9 @@ void Plugin::handleTriggerQuery(Query &query)
                 prefix_add,
                 tr("Create new snippet"),
                 tr("Create snippet file and open it in default editor."),
-                {":snippet"},
+                {u":snippet"_s},
                 {{
-                    "add", tr("Create"),
+                    u"add"_s, tr("Create"),
                     [this, q=query.string().mid(prefix_add.size())]{ addSnippet(q); }
                 }}
             )
@@ -215,7 +215,7 @@ class RedIfNotTxtFileSystemModel : public QFileSystemModel
 public:
     RedIfNotTxtFileSystemModel(QObject *parent) : QFileSystemModel(parent){}
     virtual QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const {
-        if (role == Qt::ForegroundRole && !index.data().toString().endsWith(".txt"))
+        if (role == Qt::ForegroundRole && !index.data().toString().endsWith(u".txt"_s))
             return QColorConstants::Red;
         else
             return QFileSystemModel::data(index, role);
@@ -232,7 +232,7 @@ QWidget *Plugin::buildConfigWidget()
     auto *model = new RedIfNotTxtFileSystemModel(ui.listView);
     model->setFilter(QDir::Files);
     model->setReadOnly(false);
-    model->setRootPath(configLocation().c_str());
+    model->setRootPath(QString::fromLocal8Bit(configLocation().c_str()));
 
     ui.listView->setModel(model);
     ui.listView->setRootIndex(model->index(model->rootPath()));
