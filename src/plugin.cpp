@@ -11,6 +11,7 @@
 #include <albert/albert.h>
 #include <albert/messagebox.h>
 #include <albert/standarditem.h>
+#include <albert/systemutil.h>
 ALBERT_LOGGING_CATEGORY("snippets")
 using namespace Qt::StringLiterals;
 using namespace albert::util;
