@@ -5,7 +5,6 @@
 #include "ui_configwidget.h"
 #include <QFile>
 #include <QFileSystemModel>
-#include <QMessageBox>
 #include <QTextStream>
 #include <QTimer>
 #include <albert/albert.h>
@@ -206,7 +205,7 @@ void Plugin::removeSnippet(const QString &file_name) const
     auto path = QDir(configLocation()).filePath(file_name);
     if (!QFile::exists(path))
         WARN << "Path to remove does not exist:" << path;
-    else if (question(tr("Move snippet '%1' to trash?").arg(file_name)) == QMessageBox::Yes)
+    else if (question(tr("Move snippet '%1' to trash?").arg(file_name)))
         if (!QFile::moveToTrash(path))
             warning(tr("Failed to move snippet file to trash."));
 }
