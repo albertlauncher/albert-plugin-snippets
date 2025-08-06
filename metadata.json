@@ -3,6 +3,7 @@
     "description": "Copy text snippets to the clipboard",
     "description[de]": "Textschnipsel in die Zwischenablage kopieren",
     "license": "MIT",
+    "maintainers": ["@manuelschneid3r"],
     "name": "Snippets",
     "name[de]": "Schnipsel",
     "url": "https://github.com/albertlauncher/albert-plugin-snippets",
