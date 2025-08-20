@@ -1,1 +1,1 @@
-# albert-plugin-snippets
+# Albert plugin: Snippets
