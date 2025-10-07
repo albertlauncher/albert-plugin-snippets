@@ -8,6 +8,7 @@
 #include <QTextStream>
 #include <QTimer>
 #include <albert/albert.h>
+#include <albert/iconutil.h>
 #include <albert/messagebox.h>
 #include <albert/standarditem.h>
 #include <albert/systemutil.h>
@@ -19,6 +20,7 @@ using namespace std;
 
 static const auto preview_max_size = 100;
 static const auto prefix_add = u"+"_s;
+static unique_ptr<Icon> makeIcon() { return makeImageIcon(u":snippet"_s); }
 
 struct SnippetItem : Item
 {
@@ -47,7 +49,7 @@ struct SnippetItem : Item
         return u"%1 – %2"_s.arg(tr, preview_);
     }
 
-    QStringList iconUrls() const override { return {u":snippet"_s}; }
+    unique_ptr<Icon> icon() const override { return ::makeIcon(); }
 
     vector<Action> actions() const override
     {
@@ -137,7 +139,7 @@ void Plugin::handleTriggerQuery(Query &query)
                 prefix_add,
                 tr("Create new snippet"),
                 tr("Create snippet file and open it in default editor."),
-                {u":snippet"_s},
+                makeIcon,
                 {{
                     u"add"_s, tr("Create"),
                     [this, q=query.string().mid(prefix_add.size())]{ addSnippet(q); }
