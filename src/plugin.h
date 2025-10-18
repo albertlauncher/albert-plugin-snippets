@@ -9,8 +9,8 @@
 #include <albert/indexqueryhandler.h>
 class QWidget;
 
-class Plugin : public albert::util::ExtensionPlugin,
-               public albert::util::IndexQueryHandler,
+class Plugin : public albert::ExtensionPlugin,
+               public albert::IndexQueryHandler,
                public snippets::Plugin
 
 {
@@ -28,10 +28,10 @@ private:
     QWidget* buildConfigWidget() override;
     void updateIndexItems() override;
     QString synopsis(const QString &) const override;
-    void handleTriggerQuery(albert::Query &) override;
+    std::vector<albert::RankItem> rankItems(albert::QueryContext &) override;
 
     QWidget *config_widget = nullptr;
     QFileSystemWatcher fs_watcher;
-    albert::util::BackgroundExecutor<std::vector<albert::util::IndexItem>> indexer;
+    albert::BackgroundExecutor<std::vector<albert::IndexItem>> indexer;
 
 };

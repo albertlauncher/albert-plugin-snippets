@@ -7,14 +7,14 @@
 #include <QFileSystemModel>
 #include <QTextStream>
 #include <QTimer>
-#include <albert/albert.h>
+#include <albert/app.h>
 #include <albert/iconutil.h>
 #include <albert/messagebox.h>
 #include <albert/standarditem.h>
 #include <albert/systemutil.h>
+#include <albert/logging.h>
 ALBERT_LOGGING_CATEGORY("snippets")
 using namespace Qt::StringLiterals;
-using namespace albert::util;
 using namespace albert;
 using namespace std;
 
@@ -97,22 +97,29 @@ Plugin::Plugin()
 {
     const auto conf_path = configLocation();
 
-    tryCreateDirectory(conf_path);
+    filesystem::create_directories(conf_path);
 
     fs_watcher.addPath(QString::fromLocal8Bit(conf_path.c_str()));
     connect(&fs_watcher, &QFileSystemWatcher::directoryChanged,
             this, [this]{ updateIndexItems(); });
 
-    indexer.parallel = [this](const bool &abort){
+    indexer.parallel = [this](const bool &abort)
+    {
         vector<IndexItem> r;
-        for (const auto &f : QDir(configLocation()).entryInfoList({u"*.txt"_s}, QDir::Files)){
+        for (const auto files = QDir(configLocation()).entryInfoList({u"*.txt"_s}, QDir::Files);
+             const auto &f : files)
+        {
             if (abort) return r;
             r.emplace_back(make_shared<SnippetItem>(f, this), f.completeBaseName());
         }
         return r;
     };
-    indexer.finish = [this](vector<IndexItem> &&results){
-        setIndexItems(::move(results));
+
+    indexer.finish = [this]
+    {
+        auto index_items = indexer.takeResult();
+        INFO << u"Indexed %1 snippets."_s.arg(index_items.size());
+        setIndexItems(::move(index_items));
     };
 }
 
@@ -131,10 +138,12 @@ QString Plugin::synopsis(const QString &q) const
 
 void Plugin::updateIndexItems() { indexer.run(); }
 
-void Plugin::handleTriggerQuery(Query &query)
+vector<RankItem> Plugin::rankItems(QueryContext &ctx)
 {
-    if (query.string().startsWith(prefix_add))
-        query.add(
+    vector<RankItem> results = IndexQueryHandler::rankItems(ctx);
+
+    if (ctx.query().startsWith(prefix_add))
+        results.emplace_back(
             StandardItem::make(
                 prefix_add,
                 tr("Create new snippet"),
@@ -142,19 +151,20 @@ void Plugin::handleTriggerQuery(Query &query)
                 makeIcon,
                 {{
                     u"add"_s, tr("Create"),
-                    [this, q=query.string().mid(prefix_add.size())]{ addSnippet(q); }
+                    [this, q=ctx.query().mid(prefix_add.size())]{ addSnippet(q); }
                 }}
-            )
+            ),
+            1.
         );
-    else
-        IndexQueryHandler::handleTriggerQuery(query);
+
+    return results;
 }
 
 void Plugin::addSnippet(const QString &text, QWidget *parent) const
 {
     if (!parent)
     {
-        showSettings(id()); // sets config_widget
+        App::instance().showSettings(id()); // sets config_widget
         parent = config_widget;
     }
 
