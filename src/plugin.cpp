@@ -51,28 +51,43 @@ struct SnippetItem : Item
 
     unique_ptr<Icon> icon() const override { return ::makeIcon(); }
 
+    QString path() const
+    { return QDir(plugin_->configLocation()).filePath(file_base_name_ + u".txt"_s); }
+
+    static void onReadFailed(const QString &path, const QString &error)
+    {
+        auto *msg = QT_TRANSLATE_NOOP("Plugin", "Failed to read snippet file '%1'. Error: %2");
+        WARN << QString::fromUtf8(msg).arg(path, error);
+        warning(Plugin::tr(msg).arg(path, error));
+    }
+
+    void copyToClipboard() const
+    {
+        QFile f(path());
+        if (f.open(QIODevice::ReadOnly))
+            setClipboardText(QTextStream(&f).readAll());
+        else
+            onReadFailed(path(), f.errorString());
+    }
+
+    void copyToClipboardAndPaste() const
+    {
+        QFile f(path());
+        if (f.open(QIODevice::ReadOnly))
+            setClipboardTextAndPaste(QTextStream(&f).readAll());
+        else
+            onReadFailed(path(), f.errorString());
+    }
+
     vector<Action> actions() const override
     {
         vector<Action> actions;
 
         if (havePasteSupport())
-            actions.emplace_back(
-                u"cp"_s, Plugin::tr("Copy and paste"),
-                [this]{
-                    QFile f(path());
-                    f.open(QIODevice::ReadOnly);
-                    setClipboardTextAndPaste(QTextStream(&f).readAll());
-                }
-            );
+            actions.emplace_back(u"cp"_s, Plugin::tr("Copy and paste"),
+                                 [this]{ copyToClipboardAndPaste(); });
 
-        actions.emplace_back(
-            u"c"_s, Plugin::tr("Copy"),
-            [this]{
-                QFile f(path());
-                f.open(QIODevice::ReadOnly);
-                setClipboardText(QTextStream(&f).readAll());
-            }
-        );
+        actions.emplace_back(u"c"_s, Plugin::tr("Copy"), [this]{ copyToClipboard(); });
 
         actions.emplace_back(u"o"_s, Plugin::tr("Edit"), [this]{ open(path()); });
 
@@ -81,9 +96,6 @@ struct SnippetItem : Item
 
         return actions;
     }
-
-    QString path() const
-    { return QDir(plugin_->configLocation()).filePath(file_base_name_ + u".txt"_s); }
 
 private:
 
