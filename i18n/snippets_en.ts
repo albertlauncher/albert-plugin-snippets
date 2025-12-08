@@ -89,5 +89,9 @@
         <source>[snippet text]</source>
         <translation></translation>
     </message>
+    <message>
+        <source>Failed to read snippet file &apos;%1&apos;. Error: %2</source>
+        <translation></translation>
+    </message>
 </context>
 </TS>
