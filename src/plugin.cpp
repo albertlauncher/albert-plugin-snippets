@@ -8,7 +8,7 @@
 #include <QTextStream>
 #include <QTimer>
 #include <albert/app.h>
-#include <albert/iconutil.h>
+#include <albert/icon.h>
 #include <albert/messagebox.h>
 #include <albert/standarditem.h>
 #include <albert/systemutil.h>
@@ -20,7 +20,7 @@ using namespace std;
 
 static const auto preview_max_size = 100;
 static const auto prefix_add = u"+"_s;
-static unique_ptr<Icon> makeIcon() { return makeImageIcon(u":snippet"_s); }
+static unique_ptr<Icon> makeIcon() { return Icon::image(u":snippet"_s); }
 
 struct SnippetItem : Item
 {
