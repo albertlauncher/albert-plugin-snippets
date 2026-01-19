@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(snippets VERSION 8.3.1)
+project(snippets VERSION 8.3.2)
 
 find_package(Albert REQUIRED)
 
