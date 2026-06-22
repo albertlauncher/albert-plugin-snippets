@@ -28,7 +28,7 @@ private:
     QWidget* buildConfigWidget() override;
     void updateIndexItems() override;
     QString synopsis(const QString &) const override;
-    std::vector<albert::RankItem> rankItems(albert::QueryContext &) override;
+    std::vector<albert::RankItem> rankItems(albert::QueryContext) override;
 
     QWidget *config_widget = nullptr;
     QFileSystemWatcher fs_watcher;

@@ -150,7 +150,7 @@ QString Plugin::synopsis(const QString &q) const
 
 void Plugin::updateIndexItems() { indexer.run(); }
 
-vector<RankItem> Plugin::rankItems(QueryContext &ctx)
+vector<RankItem> Plugin::rankItems(QueryContext ctx)
 {
     vector<RankItem> results = IndexQueryHandler::rankItems(ctx);
 
