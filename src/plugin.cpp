@@ -176,7 +176,7 @@ void Plugin::addSnippet(const QString &text, QWidget *parent) const
 {
     if (!parent)
     {
-        App::instance().showSettings(id()); // sets config_widget
+        app().showSettings(id()); // sets config_widget
         parent = config_widget;
     }
 
